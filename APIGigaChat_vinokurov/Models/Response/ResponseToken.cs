@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace APIGigaChat_vinokurov.Models.Response
 {
-    internal class ResponseToken
+    public class ResponseToken
     {
+        public string access_token { get; set; }
+        public string expires_at { get; set; }
     }
 }
