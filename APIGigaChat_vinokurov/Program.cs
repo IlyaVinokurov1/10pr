@@ -14,10 +14,22 @@ namespace APIGigaChat_vinokurov
     
         static string ClientId = "019b287d-4c6f-7695-97bd-095b75ac26a5";
         static string AuthorizationKey = "MDE5YjI4N2QtNGM2Zi03Njk1LTk3YmQtMDk1Yjc1YWMyNmE1OmY5M2M4N2Q0LTJkNTgtNGIwNC05NmMxLTI0YzljNWMzOTM5Yw==";
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            string Token = await GetToken(ClientId, AuthorizationKey);
+            if (Token == null)
+            {
+                Console.WriteLine("Не удалось получить токен");
+            }
+            while (true)
+            {
+                Console.Write("Сообщение: ");
+                string Message = Console.ReadLine();
+                ResponseMessage Answer = await GetAnswer(Token, Message);
+                Console.WriteLine("Ответ: " + Answer.choices[0].message.content);
+            }
         }
+
         public static async Task<string> GetToken(string rqUID, string bearer)
         {
             string ReturnToken = null;
@@ -86,7 +98,6 @@ namespace APIGigaChat_vinokurov
                 }
             }
             return responseMessage;
-
         }
     }
 }
