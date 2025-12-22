@@ -6,19 +6,18 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using APIGigaChat_vinokurov.Models.Response;
 
 namespace APIGigaChat_vinokurov
 {
     internal class Program
     {
-        // GigaChat конфигурация
         static string ClientId = "019b287d-4c6f-7695-97bd-095b75ac26a5";
         static string AuthorizationKey = "MDE5YjI4N2QtNGM2Zi03Njk1LTk3YmQtMDk1Yjc1YWMyNmE1OmY5M2M4N2Q0LTJkNTgtNGIwNC05NmMxLTI0YzljNWMzOTM5Yw==";
 
-        // YandexGPT конфигурация
         static string YandexApiKey = "***";
         static string YandexFolderId = "***";
-        // История сообщений для каждого провайдера
+
         static List<GigaMessage> gigaHistory = new List<GigaMessage>();
         static List<YandexMessage> yandexHistory = new List<YandexMessage>();
 
@@ -26,10 +25,8 @@ namespace APIGigaChat_vinokurov
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("Выберите провайдера AI:");
             Console.WriteLine("1. GigaChat");
             Console.WriteLine("2. YandexGPT");
-            Console.Write("Ваш выбор (1 или 2): ");
 
             string choice = Console.ReadLine();
 
@@ -42,16 +39,13 @@ namespace APIGigaChat_vinokurov
                     await RunYandexGPT();
                     break;
                 default:
-                    Console.WriteLine("Неверный выбор. Завершение программы.");
                     break;
             }
         }
 
         static async Task RunGigaChat()
         {
-            Console.WriteLine("\nЗапуск GigaChat. Введите 'exit' для выхода.\n");
 
-            // Получаем токен для GigaChat
             string token = await GetGigaChatToken(ClientId, AuthorizationKey);
             if (token == null)
             {
@@ -59,16 +53,12 @@ namespace APIGigaChat_vinokurov
                 return;
             }
 
-            // Добавляем системное сообщение
             gigaHistory.Add(new GigaMessage { role = "system", content = "Ты полезный ассистент." });
 
             while (true)
             {
                 Console.Write("Вы: ");
                 string input = Console.ReadLine();
-
-                if (input.ToLower() == "exit")
-                    break;
 
                 gigaHistory.Add(new GigaMessage { role = "user", content = input });
 
@@ -88,19 +78,13 @@ namespace APIGigaChat_vinokurov
 
         static async Task RunYandexGPT()
         {
-            Console.WriteLine("\nЗапуск YandexGPT. Введите 'exit' для выхода.\n");
 
-            // Добавляем системное сообщение
             yandexHistory.Add(new YandexMessage { role = "system", text = "Ты полезный ассистент." });
 
             while (true)
             {
                 Console.Write("Вы: ");
                 string input = Console.ReadLine();
-
-                if (input.ToLower() == "exit")
-                    break;
-
                 yandexHistory.Add(new YandexMessage { role = "user", text = input });
 
                 string reply = await SendToYandexGPT(yandexHistory);
@@ -117,7 +101,6 @@ namespace APIGigaChat_vinokurov
             }
         }
 
-        // Методы для GigaChat
         static async Task<string> GetGigaChatToken(string rqUID, string bearer)
         {
             string returnToken = null;
@@ -143,7 +126,7 @@ namespace APIGigaChat_vinokurov
                     if (response.IsSuccessStatusCode)
                     {
                         string responseContent = await response.Content.ReadAsStringAsync();
-                        GigaTokenResponse tokenResponse = JsonConvert.DeserializeObject<GigaTokenResponse>(responseContent);
+                        ResponseToken tokenResponse = JsonConvert.DeserializeObject<ResponseToken>(responseContent);
                         returnToken = tokenResponse.access_token;
                     }
                 }
@@ -164,7 +147,7 @@ namespace APIGigaChat_vinokurov
                     request.Headers.Add("Accept", "application/json");
                     request.Headers.Add("Authorization", $"Bearer {token}");
 
-                    GigaRequest gigaRequest = new GigaRequest
+                    var gigaRequest = new
                     {
                         model = "GigaChat",
                         stream = false,
@@ -186,13 +169,12 @@ namespace APIGigaChat_vinokurov
                         return null;
                     }
 
-                    GigaResponse result = JsonConvert.DeserializeObject<GigaResponse>(responseText);
+                    ResponseMessage result = JsonConvert.DeserializeObject<ResponseMessage>(responseText);
                     return result?.choices?[0]?.message?.content;
                 }
             }
         }
 
-        // Методы для YandexGPT
         static async Task<string> SendToYandexGPT(List<YandexMessage> history)
         {
             var url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
@@ -228,51 +210,12 @@ namespace APIGigaChat_vinokurov
         }
     }
 
-    // Классы для GigaChat
     public class GigaMessage
     {
         public string role { get; set; }
         public string content { get; set; }
     }
 
-    public class GigaRequest
-    {
-        public string model { get; set; }
-        public List<GigaMessage> messages { get; set; }
-        public bool stream { get; set; }
-        public int repetition_penalty { get; set; }
-    }
-
-    public class GigaResponse
-    {
-        public List<GigaChoice> choices { get; set; }
-        public int created { get; set; }
-        public string model { get; set; }
-        public string @object { get; set; }
-        public GigaUsage usage { get; set; }
-
-        public class GigaUsage
-        {
-            public int completion_tokens { get; set; }
-            public int prompt_tokens { get; set; }
-            public int total_tokens { get; set; }
-        }
-
-        public class GigaChoice
-        {
-            public string finish_reason { get; set; }
-            public int index { get; set; }
-            public GigaMessage message { get; set; }
-        }
-    }
-
-    public class GigaTokenResponse
-    {
-        public string access_token { get; set; }
-        public string expires_at { get; set; }
-    }
-
-    // Классы для YandexGPT (уже у вас есть)
     public class YandexMessage
     {
         public string role { get; set; }
